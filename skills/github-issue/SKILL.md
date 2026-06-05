@@ -5,9 +5,21 @@ description: 规范化开发一个 GitHub issue，从理解需求到提交 PR �
 
 # GitHub Issue 开发工作流
 
-当用户要求开发某个 GitHub issue 时，按以下流程执行：
+当用户要求开发某个 GitHub issue 时，遵循以下工作流：
 
-## Step 1: 切换/创建分支
+## 全局约束
+
+以下全局约束贯穿全部阶段，必须始终遵守。
+
+- **禁止 force push、禁止 rebase**（除非用户明确要求）
+- **禁止简化或改写以下任何 bash 命令**——命令经过验证，省略参数或合并步骤会导致不必要的错误
+- 每个 commit 只包含一个逻辑变更
+- 遵循项目中的编码规范
+- 如果过程中发现 issue 描述与实际代码不符（如函数已改名、接口已变更），先向用户确认再继续
+
+## 工作流
+
+### Step 1: 切换/创建分支
 
 首先获取当前 GitHub 用户名和主分支名（`main` 或 `master`）：
 
@@ -25,24 +37,24 @@ BRANCH="$USERNAME/issue<N>"
 
 统一使用 `git switch`（不用 `git checkout`）。
 
-## Step 2: 获取 Issue 信息
+### Step 2: 获取 Issue 信息
 
-使用 `gh issue view <N>` 获取 issue 的标题、描述、评论、labels。
-使用 `gh api repos/{owner}/{repo}/issues/{N}/comments` 获取所有评论（如果需要更多上下文）。
+- 使用 `gh issue view <N>` 获取 issue 的标题、描述、评论、labels。
+- 使用 `gh api repos/{owner}/{repo}/issues/{N}/comments` 获取所有评论（如果需要更多上下文）。
 
-## Step 3: 理解需求与范围
+### Step 3: 理解需求与范围
 
 - 提取 issue 的核心需求和验收条件
 - 如果需求不明确，向用户提出澄清问题
 - 确认影响范围和涉及的模块
 
-## Step 4: 制定计划
+### Step 4: 制定计划
 
 所有 issue 均需进入 plan mode，使用 EnterPlanMode 设计实现方案。
 
 向用户展示计划内容，**必须等待用户确认后再进入 Step 5 开始开发**。用户提出修改意见的，调整计划后重新确认。
 
-## Step 5: 实施
+### Step 5: 实施
 
 按 TaskCreate 创建的任务清单逐步实施：
 
@@ -56,25 +68,31 @@ BRANCH="$USERNAME/issue<N>"
    - **scope** — 涉及的模块或功能区域；跨模块用 `*`
    - **描述** — 简明扼要，中文优先
 
-## Step 6: 验证与确认
+### Step 6: 验证与确认
 
 - 运行完整测试套件
 - 确认变更范围符合预期
 - 确认没有引入 lint 错误或类型错误
 - **必须等待用户确认后**才能进入 Step 7。用户提出修改意见的，回到 Step 5 重新实施后再验证。
 
-## Step 7: 提交 PR
+### Step 7: 提交 PR
 
 ```bash
-gh pr create --title "<简短标题>" --body "<摘要>"
+gh pr create --title "<type>(<scope>): <描述>" --body "$(cat <<'EOF'
+## Summary
+- <bullet point 1>
+- <bullet point 2>
+- <bullet point 3>
+
+Closes #<N>
+EOF
+)"
 ```
 
 - PR 标题格式 `<type>(<scope>): <描述>`，与 commit message 一致
-- PR 描述格式：
-  - ## Summary — 2-3 个 bullet points
-  - 关联 issue — 在 body 末尾加 `Closes #N`
+- PR body 以 `Closes #<N>` 结尾，确保合并后自动关闭 issue
 
-## Step 8: 合并 PR
+### Step 8: 合并 PR
 
 PR 提交后，检查是否存在冲突并尝试自动合并：
 
@@ -96,18 +114,10 @@ MERGEABLE=$(gh pr view <PR_NUMBER> --json mergeable --jq .mergeable)
 gh issue view <N> --json state --jq .state  # 应为 CLOSED
 ```
 
-## Step 9: 清理本地分支
+### Step 9: 清理本地分支
 
 合并成功后，切回主分支并清理本地开发分支：
 
 ```bash
 git switch $DEFAULT_BRANCH && git pull origin $DEFAULT_BRANCH && (git branch -D $BRANCH 2>/dev/null || true) && git remote prune origin
 ```
-
-## 注意事项
-
-- 不要在没有用户明确要求的情况下 force push 或 rebase
-- 每个 commit 只包含一个逻辑变更
-- 遵循项目中的编码规范
-- 如果过程中发现 issue 描述与实际代码不符（如函数已改名、接口已变更），先向用户确认再继续
-- 对于 bug 修复类 issue，优先复现问题，再写修复
