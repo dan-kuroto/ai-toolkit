@@ -121,3 +121,5 @@ gh issue view <N> --json state --jq .state  # 应为 CLOSED
 ```bash
 git switch $DEFAULT_BRANCH && git pull origin $DEFAULT_BRANCH && (git branch -D $BRANCH 2>/dev/null || true) && git remote prune origin
 ```
+
+> 注意：合并 PR 时可能已自动清理本地分支，为避免删除分支报错导致流程中断，**必须保留** `2>/dev/null || true` 忽略错误，以确保顺利执行过期远程分支的清理。
