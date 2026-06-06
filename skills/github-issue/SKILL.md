@@ -63,10 +63,23 @@ BRANCH="$USERNAME/issue<N>"
    - 业务功能或难以写测试代码的可以跳过，通过实际运行验证
 2. **实现功能代码**——最小改动实现需求
 3. **运行测试**——每次改动后执行项目静态检查和测试
-4. **提交**——每个逻辑变更一个 commit，message 格式 `<type>(<scope>): <描述>`
-   - **type** — `feat / fix / doc / refactor / perf / test / build / ci / chore`
-   - **scope** — 涉及的模块或功能区域；跨模块用 `*`
-   - **描述** — 简明扼要，中文优先
+4. **提交**——每个逻辑变更一个 commit，格式见下方「提交格式」
+
+#### 提交格式
+
+```bash
+git commit -m "$(cat <<'EOF'
+<type>(<scope>): <描述>
+
+<变更说明>
+EOF
+)"
+```
+
+- **type** — `feat / fix / doc / refactor / perf / test / build / ci / chore`
+- **scope** — 涉及的模块或功能区域；跨模块用 `*`
+- **描述** — 简明扼要，中文优先
+- **变更说明** — 本次变更详情。对于改动较小、<描述>就能说清楚的，可省略
 
 ### Step 6: 验证与确认
 
@@ -122,4 +135,4 @@ gh issue view <N> --json state --jq .state  # 应为 CLOSED
 git switch $DEFAULT_BRANCH && git pull origin $DEFAULT_BRANCH && (git branch -D $BRANCH 2>/dev/null || true) && git remote prune origin
 ```
 
-> 注意：合并 PR 时可能已自动清理本地分支，为避免删除分支报错导致流程中断，**必须保留** `2>/dev/null || true` 忽略错误，以确保顺利执行过期远程分支的清理。
+> 注意：合并 PR 时可能已自动清理本地分支，为避免报错导致流程中断，删除分支时**必须保留** `2>/dev/null || true` 忽略错误，以确保顺利执行过期远程分支的清理。
